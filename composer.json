@@ -1,0 +1,34 @@
+{
+    "name": "administrator/facebook-bot",
+    "description": "",
+    "keywords": ["facebook","bot","tool","php"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Quach van hao",
+            "email": "quachvanhao@cccd.vn"
+        }
+    ],
+    "require": {
+        "administrator/process-forward": "dev-main",
+        "symfony/serializer": "9999999-dev",
+        "symfony/property-access": "9999999-dev",
+        "laminas/laminas-cache": "9999999-dev",
+        "laminas/laminas-http": "^2.13"
+    },
+    "repositories": [
+        {"type": "vcs", "url": "https://github.com/quachvanhao2020/ProcessForward.git"}    
+    ],
+    "scripts": {
+        "cs-check": "phpcs",
+        "cs-fix": "phpcbf",
+        "development-disable": "laminas-development-mode disable",
+        "development-enable": "laminas-development-mode enable",
+        "development-status": "laminas-development-mode status",
+        "serve": "php -S 0.0.0.0:8080 -t public",
+        "test": "phpunit"
+    },
+    "config": {
+        "process-timeout":0
+    }
+}
