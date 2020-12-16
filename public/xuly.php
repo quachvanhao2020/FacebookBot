@@ -1,31 +1,42 @@
 <?php
 require_once "init.php";
-
 use ProcessForward\Process;
-use ProcessForward\ProcessActionConst;
 use ProcessForward\ProcessManager;
 use ProcessForward\ProcessRequest;
+
 $id = isset($_POST["id"]) ? $_POST["id"] : @$_COOKIE["id_process"];
 $action = @$_POST["action"];
 if(!$action){
     echo "0";
     exit;
 }
+$pm = new ProcessManager();
 $accounts = @$_POST["accounts"];
 $groups = @$_POST["groups"];
 $options = @$_POST["options"];
+$_result = @$_POST["result"];
+$error = @$_POST["error"];
 $owned = "faceboo_bot";
+if($action == "update"){
+    //var_dump($_POST);
+}
 setcookie("accounts", $accounts, time() + (86400 * 30), "/");
 setcookie("groups", $groups, time() + (86400 * 30), "/");
 setcookie("options", $options, time() + (86400 * 30), "/");
 if(is_string($accounts)){
-    $accounts = explode("\n", $accounts);
+    $accounts = decodeString($accounts);
 }
 if(is_string($groups)){
-    $groups = explode("\n", $groups);
+    $groups = decodeString($groups);
 }
 if(is_string($options)){
-    $options = explode("\n", $options);
+    $options = decodeString($options);
+}
+if(is_string($_result)){
+    $_result = decodeString($_result);
+}
+if(is_string($error)){
+    $error = decodeString($error);
 }
 $parameter = [
     "accounts" => $accounts,
@@ -37,12 +48,15 @@ $_request = [
     "process_forward_aware" => isset($_POST["process_forward_aware"]),
     "action" => $action,
     "parameter" => $parameter,
-    "result" => [],
-    "error" => [],
+    "result" => $_result,
+    "error" => $error,
     "owned" => $owned,
 ];
+if($action == "update"){
+    //var_dump($_request);
+}
+
 $request = new ProcessRequest($_GET,$_request);
-$pm = new ProcessManager();
 $result = $pm->handle($request,false);
 if($result instanceof Process){
     $id = $result->getId();
@@ -56,7 +70,18 @@ if($result instanceof Process){
 if($action == "kill"){
     setcookie("id_process", "", time()-3600);
 }
-if($result == true){
+if($result === true){
     header('Location: index.php') ;
+    exit();
 }
+$pm->release($result);
+
+function decodeString($string){
+    $string = str_replace("'",'"',$string);
+    $result = json_decode($string,true);
+    if(!$result)
+        $result = explode("\n", $string);
+    return $result;
+}       
+
 ?>
