@@ -6,10 +6,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $pm = new ProcessManager();
     $process = $pm->get($id);
     $result = [
-        "data" => $process->getResult()
+        "data" => group_table_result($process->getResult())
     ];
     $pm->release($result);
     exit;
+}
+function group_table_result($data){
+    //var_dump($data);
+    $results = [];
+    foreach ($data as $key => $value) {
+        $posts = $value["posts"];
+        foreach ($posts as $_key => $_value) {
+            $_value = $_value[0];
+            array_push($results,[
+                $_value["id"],
+                $_value["time"],
+                $_value["body"],
+                $_value["body2"],
+                $value["id"],
+            ]);
+        }
+    }
+    return $results;
 }
 ?>
 <!doctype html>
@@ -20,6 +38,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
     <link href="//cdn.datatables.net/1.10.22/css/jquery.dataTables.min.css" rel="stylesheet" crossorigin="anonymous">
     <title>Facebook Group Scaner</title>
+    <style>
+        .do00u71z.ni8dbmo4.stjgntxs.l9j0dhe7{
+            padding-top: 0px !important
+        }
+        .l9j0dhe7{
+            padding-top: 0px !important
+        }
+    </style>
   </head>
   <body>
     <div class="container">
@@ -28,19 +54,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <thead>
                 <tr>
                     <th>Địa chỉ bài viết</th>
+                    <th>Thời gian</th>
                     <th>Nội dung</th>
+                    <th>Nội dung 2</th>
                     <th>Ngưởi đăng</th>
                     <th>Nhóm sở hữu</th>
                 </tr>
             </thead>
-            <tfoot>
-                <tr>
-                    <th>Địa chỉ bài viết</th>
-                    <th>Nội dung</th>
-                    <th>Ngưởi đăng</th>
-                    <th>Nhóm sở hữu</th>
-                </tr>
-            </tfoot>
         </table>
     </div>
     <script src="https://code.jquery.com/jquery-3.5.1.min.js" crossorigin="anonymous"></script>
@@ -56,12 +76,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     "type": "POST"
                 }
             });
+            $.fn.dataTable.ext.errMode = 'none';
         });
         updateData();
         function updateData(){
-            setInterval(function(){ 
-                $('#example').DataTable().ajax.reload();
-            },2000);
+            window.myinterval = setInterval(function(){ 
+                var table = $('#example').DataTable();
+                table.ajax.reload();
+                var count = table.rows().count();
+                console.log(count);
+                if(count > 0)
+                clearInterval(window.myinterval);
+            },5000);
         }
     </script>
   </body>

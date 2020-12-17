@@ -11,20 +11,71 @@ if(!$action){
     exit;
 }
 $pm = new ProcessManager();
-$accounts = @$_POST["accounts"];
-$groups = @$_POST["groups"];
-$options = @$_POST["options"];
+$accounts = [];
+$groups = [];
+$options = [];
+$actions_link = [];
+$actions_post = [];
+$blood = "";
+if($id){
+    try {
+        $process = $pm->get($id);
+        $parameter = $process->getParameter();
+        $accounts = $parameter["accounts"];
+        $groups = $parameter["groups"];
+        $actions_link = $parameter["actions_link"];
+        $actions_post = $parameter["actions_post"];
+        $options = $parameter["options"];
+        $blood = $process["blood"];
+    } catch (\Throwable $ex) {
+        setcookie("id_process", "", time()-3600);
+    }
+}
+
 $_result = @$_POST["result"];
 $error = @$_POST["error"];
+
+if(isset($_POST["accounts"])){
+    $accounts = $_POST["accounts"];
+}
+if(isset($_POST["groups"])){
+    $groups = $_POST["groups"];
+}
+if(isset($_POST["options"])){
+    $options = $_POST["options"];
+}
+if(isset($_POST["actions_link"])){
+    $actions_link = $_POST["actions_link"];
+}
+if(isset($_POST["actions_post"])){
+    $actions_post = $_POST["actions_post"];
+}
 $owned = "faceboo_bot";
+
+if(isset($_POST["blood"])){
+    $blood = $_POST["blood"];
+}
 if($action == "update"){
     //var_dump($_POST);
 }
-setcookie("accounts", $accounts, time() + (86400 * 30), "/");
-setcookie("groups", $groups, time() + (86400 * 30), "/");
-setcookie("options", $options, time() + (86400 * 30), "/");
+if(is_array($actions_link)){
+    $actions_link = array_flip($actions_link);
+}
+if(is_array($actions_post)){
+    $actions_post = array_flip($actions_post);
+}
 if(is_string($accounts)){
     $accounts = decodeString($accounts);
+    if(is_array($accounts)){
+        foreach ($accounts as $key => $value) {
+            $_accounts = explode("|",$value);
+            $accounts[$key] = [
+                "username" => $_accounts[0],
+                "password" => $_accounts[1],
+                "fa2" => $_accounts[2],
+            ];
+        }
+    }
 }
 if(is_string($groups)){
     $groups = decodeString($groups);
@@ -33,7 +84,7 @@ if(is_string($options)){
     $options = decodeString($options);
 }
 if(is_string($_result)){
-    $_result = decodeString($_result);
+    $_result = json_decode($_result,true);
 }
 if(is_string($error)){
     $error = decodeString($error);
@@ -42,6 +93,8 @@ $parameter = [
     "accounts" => $accounts,
     "groups" => $groups,
     "options" => $options,
+    "actions_link" => $actions_link,
+    "actions_post" => $actions_post,
 ];
 $_request = [
     "id" => $id,
@@ -51,6 +104,7 @@ $_request = [
     "result" => $_result,
     "error" => $error,
     "owned" => $owned,
+    "blood" => $blood,
 ];
 if($action == "update"){
     //var_dump($_request);
@@ -78,6 +132,7 @@ $pm->release($result);
 
 function decodeString($string){
     $string = str_replace("'",'"',$string);
+    $string = str_replace("\r",'',$string);
     $result = json_decode($string,true);
     if(!$result)
         $result = explode("\n", $string);
