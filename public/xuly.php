@@ -10,6 +10,9 @@ if(!$action){
     echo "0";
     exit;
 }
+if($action == "kill"){
+    return;
+}
 $pm = new ProcessManager();
 $accounts = [];
 $groups = [];
@@ -17,6 +20,7 @@ $options = [];
 $actions_link = [];
 $actions_post = [];
 $blood = "";
+$post_body = "";
 if($id){
     try {
         $process = $pm->get($id);
@@ -26,15 +30,26 @@ if($id){
         $actions_link = $parameter["actions_link"];
         $actions_post = $parameter["actions_post"];
         $options = $parameter["options"];
-        $blood = $process["blood"];
+        $blood = $process->getBlood();
+        $post_body = $parameter["post_body"];
     } catch (\Throwable $ex) {
+        #throw $ex;
         setcookie("id_process", "", time()-3600);
     }
 }
 
-$_result = @$_POST["result"];
-$error = @$_POST["error"];
-
+$_result = [];
+$error = [];
+$redirect = "index.php";
+if(isset($_POST["result"])){
+    $_result = $_POST["result"];
+}
+if(isset($_POST["error"])){
+    $error = $_POST["error"];
+}
+if(isset($_POST["redirect"])){
+    $redirect = $_POST["redirect"];
+}
 if(isset($_POST["accounts"])){
     $accounts = $_POST["accounts"];
 }
@@ -50,14 +65,13 @@ if(isset($_POST["actions_link"])){
 if(isset($_POST["actions_post"])){
     $actions_post = $_POST["actions_post"];
 }
-$owned = "faceboo_bot";
-
 if(isset($_POST["blood"])){
     $blood = $_POST["blood"];
 }
-if($action == "update"){
-    //var_dump($_POST);
+if(isset($_POST["post_body"])){
+    $post_body = $_POST["post_body"];
 }
+$owned = "faceboo_bot";
 if(is_array($actions_link)){
     $actions_link = array_flip($actions_link);
 }
@@ -95,6 +109,7 @@ $parameter = [
     "options" => $options,
     "actions_link" => $actions_link,
     "actions_post" => $actions_post,
+    "post_body" => $post_body,
 ];
 $_request = [
     "id" => $id,
@@ -106,9 +121,6 @@ $_request = [
     "owned" => $owned,
     "blood" => $blood,
 ];
-if($action == "update"){
-    //var_dump($_request);
-}
 
 $request = new ProcessRequest($_GET,$_request);
 $result = $pm->handle($request,false);
@@ -121,11 +133,16 @@ if($result instanceof Process){
         $result = $pm->update($id,$result);
     };
 }
-if($action == "kill"){
-    setcookie("id_process", "", time()-3600);
+if($action == "update" && empty($_result)){
+    $pm->reset($id);
+}
+
+if($action == "reset"){
+    header('Location: '.$redirect) ;
+    exit();
 }
 if($result === true){
-    header('Location: index.php') ;
+    header('Location: '.$redirect) ;
     exit();
 }
 $pm->release($result);
